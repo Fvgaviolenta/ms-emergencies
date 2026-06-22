@@ -1,0 +1,31 @@
+spring:
+  datasource:
+    url: ${MS_EMERGENCIES_DB_URL}
+    username: ${MS_EMERGENCIES_DB_USER}
+    password: ${MS_EMERGENCIES_DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  rabbitmq:
+    host: ${RABBITMQ_HOST}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASS:guest}
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT:6379}
+
+catastrofescl:
+  firebase:
+    enabled: true
+    credentials-path: ${FIREBASE_CREDENTIALS_PATH:}
+    project-id: ${FIREBASE_PROJECT_ID:}
+  auth:
+    dev-mode: false
+  cors:
+    allowed-origins:
+      - ${FRONTEND_ORIGIN}
+
+logging:
+  level:
+    cl.catastrofescl.emergencies: INFO
+    org.hibernate.SQL: WARN

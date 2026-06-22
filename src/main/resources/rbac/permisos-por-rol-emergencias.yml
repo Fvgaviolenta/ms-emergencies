@@ -1,0 +1,19 @@
+# Matriz rol -> permisos del modulo EMERGENCIAS (ms-emergencies).
+# Las claves deben ser roles INTERNOS (tras MapeadorRolesFirebase: ADMIN->ADMINISTRADOR, etc.).
+# Cuando ms-identity exponga roles_permisos en BD, este archivo sirve de contrato y fallback.
+
+ADMINISTRADOR:
+  - EMERGENCIA_DECLARAR
+  - EMERGENCIA_GESTIONAR
+  - ANUNCIO_PUBLICAR
+
+AUTORIDAD:
+  - EMERGENCIA_DECLARAR
+  - EMERGENCIA_GESTIONAR
+  - ANUNCIO_PUBLICAR
+
+OPERADOR: []
+
+PARTICULAR: []
+
+VOLUNTARIO: []
