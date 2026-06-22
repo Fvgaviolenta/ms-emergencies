@@ -1,0 +1,67 @@
+services:
+  ms-emergencies:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: catastrofescl-ms-emergencies
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      MS_EMERGENCIES_DB_URL: jdbc:postgresql://${POSTGRES_DOCKER_HOST:-host.docker.internal}:${POSTGRES_PORT:-5432}/${MS_EMERGENCIES_DB_NAME:-catastrofescl_emergencies}
+      MS_EMERGENCIES_DB_USER: ${MS_EMERGENCIES_DB_USER:-catastrofescl}
+      MS_EMERGENCIES_DB_PASSWORD: ${MS_EMERGENCIES_DB_PASSWORD:-catastrofescl}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASS: ${RABBITMQ_PASS:-guest}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      FIREBASE_ENABLED: ${FIREBASE_ENABLED:-false}
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-}
+      FIREBASE_CREDENTIALS_PATH: ${FIREBASE_CREDENTIALS_PATH:-}
+      MS_EMERGENCIES_AUTH_DEV_MODE: ${MS_EMERGENCIES_AUTH_DEV_MODE:-true}
+    ports:
+      - "8082:8082"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: catastrofescl-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-guest}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: catastrofescl-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  rabbitmq_data:
+  redis_data:
