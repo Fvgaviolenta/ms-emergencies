@@ -1,5 +1,6 @@
 package cl.catastrofescl.emergencies.service;
 
+import cl.catastrofescl.emergencies.dto.request.ActualizarAnuncioRequest;
 import cl.catastrofescl.emergencies.dto.request.PublicarAnuncioRequest;
 import cl.catastrofescl.emergencies.dto.response.AnuncioResponse;
 import cl.catastrofescl.emergencies.entity.AlcanceAnuncio;
@@ -12,6 +13,7 @@ import cl.catastrofescl.emergencies.entity.TipoEmergencia;
 import cl.catastrofescl.emergencies.event.AnuncioPublicadoEvento;
 import cl.catastrofescl.emergencies.event.EmergenciaCreadaEvento;
 import cl.catastrofescl.emergencies.event.EventoDominio;
+import cl.catastrofescl.emergencies.exception.AnuncioNoEncontradoException;
 import cl.catastrofescl.emergencies.exception.EmergenciaNoActivaException;
 import cl.catastrofescl.emergencies.exception.EmergenciaNoEncontradaException;
 import cl.catastrofescl.emergencies.repository.RepositorioAnuncios;
@@ -158,6 +160,59 @@ class ServicioAnunciosTest {
 
         assertThatThrownBy(() -> servicio.publicar(req))
                 .isInstanceOf(EmergenciaNoEncontradaException.class);
+    }
+
+    @Test
+    void actualizarAnuncioExistentePersisteCambios() {
+        UUID anuncioId = UUID.randomUUID();
+        Anuncio existente = Anuncio.builder()
+                .id(anuncioId)
+                .emergenciaId(UUID.randomUUID())
+                .autorUsuarioId(UUID.randomUUID())
+                .titulo("Titulo original")
+                .contenido("Contenido original")
+                .severidad(SeveridadAnuncio.INFORMATIVO)
+                .alcance(AlcanceAnuncio.NACIONAL)
+                .region("Metropolitana")
+                .vigenteDesde(OffsetDateTime.now())
+                .creadoEn(OffsetDateTime.now())
+                .build();
+
+        when(repositorioAnuncios.findById(anuncioId)).thenReturn(Optional.of(existente));
+        when(repositorioAnuncios.save(any(Anuncio.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ActualizarAnuncioRequest req = new ActualizarAnuncioRequest(
+                "Titulo actualizado",
+                "Contenido actualizado",
+                SeveridadAnuncio.URGENTE,
+                AlcanceAnuncio.REGIONAL,
+                "Valparaiso",
+                OffsetDateTime.now().plusDays(7)
+        );
+
+        AnuncioResponse resp = servicio.actualizar(anuncioId, req);
+
+        assertThat(resp.titulo()).isEqualTo("Titulo actualizado");
+        assertThat(resp.contenido()).isEqualTo("Contenido actualizado");
+        assertThat(resp.severidad()).isEqualTo(SeveridadAnuncio.URGENTE);
+        assertThat(resp.alcance()).isEqualTo(AlcanceAnuncio.REGIONAL);
+        assertThat(resp.region()).isEqualTo("Valparaiso");
+        assertThat(resp.vigenteHasta()).isNotNull();
+    }
+
+    @Test
+    void actualizarAnuncioInexistenteLanzaNotFound() {
+        UUID anuncioId = UUID.randomUUID();
+        when(repositorioAnuncios.findById(anuncioId)).thenReturn(Optional.empty());
+
+        ActualizarAnuncioRequest req = new ActualizarAnuncioRequest(
+                "Titulo", "Contenido",
+                SeveridadAnuncio.INFORMATIVO, AlcanceAnuncio.NACIONAL,
+                null, null
+        );
+
+        assertThatThrownBy(() -> servicio.actualizar(anuncioId, req))
+                .isInstanceOf(AnuncioNoEncontradoException.class);
     }
 
     private Emergencia emergencia(UUID id, EstadoEmergencia estado) {

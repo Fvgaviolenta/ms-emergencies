@@ -1,5 +1,6 @@
 package cl.catastrofescl.emergencies.service;
 
+import cl.catastrofescl.emergencies.dto.request.ActualizarAnuncioRequest;
 import cl.catastrofescl.emergencies.dto.request.PublicarAnuncioRequest;
 import cl.catastrofescl.emergencies.dto.response.AnuncioResponse;
 import cl.catastrofescl.emergencies.entity.AlcanceAnuncio;
@@ -11,6 +12,7 @@ import cl.catastrofescl.emergencies.event.AnuncioPublicadoEvento;
 import cl.catastrofescl.emergencies.event.EmergenciaCreadaEvento;
 import cl.catastrofescl.emergencies.entity.SeveridadEmergencia;
 import cl.catastrofescl.emergencies.entity.TipoEmergencia;
+import cl.catastrofescl.emergencies.exception.AnuncioNoEncontradoException;
 import cl.catastrofescl.emergencies.exception.EmergenciaNoActivaException;
 import cl.catastrofescl.emergencies.exception.EmergenciaNoEncontradaException;
 import cl.catastrofescl.emergencies.repository.RepositorioAnuncios;
@@ -130,6 +132,24 @@ public class ServicioAnuncios {
         return repositorioAnuncios
                 .listarVigentes(OffsetDateTime.now(), soloPagina)
                 .map(this::aResponse);
+    }
+
+    @Transactional
+    public AnuncioResponse actualizar(UUID anuncioId, ActualizarAnuncioRequest solicitud) {
+        Anuncio anuncio = repositorioAnuncios.findById(anuncioId)
+                .orElseThrow(() -> new AnuncioNoEncontradoException(anuncioId));
+
+        anuncio.setTitulo(solicitud.titulo());
+        anuncio.setContenido(solicitud.contenido());
+        anuncio.setSeveridad(solicitud.severidad());
+        anuncio.setAlcance(solicitud.alcance());
+        anuncio.setRegion(solicitud.region());
+        anuncio.setVigenteHasta(solicitud.vigenteHasta());
+
+        Anuncio persistido = repositorioAnuncios.save(anuncio);
+        log.info("Anuncio actualizado id={} severidad={} alcance={}",
+                persistido.getId(), persistido.getSeveridad(), persistido.getAlcance());
+        return aResponse(persistido);
     }
 
     private void publicarEventoAnuncio(Anuncio persistido) {

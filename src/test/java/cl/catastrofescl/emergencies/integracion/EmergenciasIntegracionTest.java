@@ -19,7 +19,6 @@ import java.util.UUID;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.awaitility.Awaitility.await;
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -261,6 +260,125 @@ class EmergenciasIntegracionTest extends BaseIntegracionTest {
                         .content(objectMapper.writeValueAsString(anuncio)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.errorCode", is("EMERGENCY_NOT_ACTIVE")));
+    }
+
+    @Test
+    void actualizarAnuncioConPermisoDevuelve200() throws Exception {
+        String emergenciaId = crearEmergenciaActiva("Metropolitana");
+        String anuncioId = publicarAnuncio(emergenciaId, "Titulo original", "Contenido original");
+
+        ObjectNode actualizacion = objectMapper.createObjectNode();
+        actualizacion.put("titulo", "Titulo actualizado");
+        actualizacion.put("contenido", "Contenido actualizado");
+        actualizacion.put("severidad", "URGENTE");
+        actualizacion.put("alcance", "REGIONAL");
+        actualizacion.put("region", "Valparaiso");
+
+        mvc().perform(patch("/announcements/" + anuncioId)
+                        .header("X-Dev-Firebase-Uid", uidDev.toString())
+                        .header("X-Dev-Roles", "ADMINISTRADOR")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(actualizacion)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is(anuncioId)))
+                .andExpect(jsonPath("$.titulo", is("Titulo actualizado")))
+                .andExpect(jsonPath("$.contenido", is("Contenido actualizado")))
+                .andExpect(jsonPath("$.severidad", is("URGENTE")))
+                .andExpect(jsonPath("$.alcance", is("REGIONAL")))
+                .andExpect(jsonPath("$.region", is("Valparaiso")));
+    }
+
+    @Test
+    void actualizarAnuncioInexistenteDevuelve404() throws Exception {
+        UUID anuncioId = UUID.randomUUID();
+        ObjectNode actualizacion = objectMapper.createObjectNode();
+        actualizacion.put("titulo", "Titulo");
+        actualizacion.put("contenido", "Contenido");
+        actualizacion.put("severidad", "INFORMATIVO");
+        actualizacion.put("alcance", "NACIONAL");
+
+        mvc().perform(patch("/announcements/" + anuncioId)
+                        .header("X-Dev-Firebase-Uid", uidDev.toString())
+                        .header("X-Dev-Roles", "ADMINISTRADOR")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(actualizacion)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.errorCode", is("ANNOUNCEMENT_NOT_FOUND")));
+    }
+
+    @Test
+    void actualizarAnuncioSinAuthDevuelve401() throws Exception {
+        mvc().perform(patch("/announcements/" + UUID.randomUUID())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "titulo": "Sin auth",
+                                  "contenido": "Cuerpo",
+                                  "severidad": "INFORMATIVO",
+                                  "alcance": "NACIONAL"
+                                }
+                                """))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void actualizarAnuncioSinPermisoDevuelve403() throws Exception {
+        String emergenciaId = crearEmergenciaActiva("Biobio");
+        String anuncioId = publicarAnuncio(emergenciaId, "Anuncio", "Cuerpo");
+
+        ObjectNode actualizacion = objectMapper.createObjectNode();
+        actualizacion.put("titulo", "Intento");
+        actualizacion.put("contenido", "Sin permiso");
+        actualizacion.put("severidad", "INFORMATIVO");
+        actualizacion.put("alcance", "NACIONAL");
+
+        mvc().perform(patch("/announcements/" + anuncioId)
+                        .header("X-Dev-Firebase-Uid", uidDev.toString())
+                        .header("X-Dev-Roles", "PARTICULAR")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(actualizacion)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.errorCode", is("ACCESS_DENIED")));
+    }
+
+    private String crearEmergenciaActiva(String region) throws Exception {
+        ObjectNode cuerpo = objectMapper.createObjectNode();
+        cuerpo.put("tipo", "TERREMOTO");
+        cuerpo.put("severidad", "ALTA");
+        cuerpo.put("region", region);
+        ObjectNode epicentro = cuerpo.putObject("epicentro");
+        epicentro.put("longitud", -70.65);
+        epicentro.put("latitud", -33.43);
+
+        MvcResult res = mvc().perform(post("/emergencies")
+                        .header("X-Dev-Firebase-Uid", uidDev.toString())
+                        .header("X-Dev-Roles", "ADMINISTRADOR")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(cuerpo)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        return objectMapper.readTree(res.getResponse().getContentAsString()).get("id").asText();
+    }
+
+    private String publicarAnuncio(String emergenciaId, String titulo, String contenido) throws Exception {
+        ObjectNode anuncio = objectMapper.createObjectNode();
+        anuncio.put("emergenciaId", emergenciaId);
+        anuncio.put("titulo", titulo);
+        anuncio.put("contenido", contenido);
+        anuncio.put("severidad", "IMPORTANTE");
+        anuncio.put("alcance", "REGIONAL");
+        anuncio.put("region", "Metropolitana");
+
+        MvcResult res = mvc().perform(post("/announcements")
+                        .header("X-Dev-Firebase-Uid", uidDev.toString())
+                        .header("X-Dev-Roles", "ADMINISTRADOR")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(anuncio)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        return objectMapper.readTree(res.getResponse().getContentAsString()).get("id").asText();
     }
 
     private void agregarCoordenada(ArrayNode arreglo, double longitud, double latitud) {
