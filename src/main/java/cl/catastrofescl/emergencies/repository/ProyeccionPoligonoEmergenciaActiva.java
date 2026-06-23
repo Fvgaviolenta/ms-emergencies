@@ -1,6 +1,6 @@
 package cl.catastrofescl.emergencies.repository;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 public interface ProyeccionPoligonoEmergenciaActiva {
@@ -14,7 +14,9 @@ public interface ProyeccionPoligonoEmergenciaActiva {
 
     String getEstado();
 
-    OffsetDateTime getDeclaradaEn();
+    // La consulta nativa lee la columna TIMESTAMPTZ como java.time.Instant.
+    // Se expone como Instant y el servicio lo convierte a OffsetDateTime para el DTO.
+    Instant getDeclaradaEn();
 
     String getZonaImpactoGeoJson();
 }

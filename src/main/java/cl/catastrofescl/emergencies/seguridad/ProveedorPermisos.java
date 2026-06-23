@@ -1,5 +1,6 @@
 package cl.catastrofescl.emergencies.seguridad;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Component;
@@ -42,6 +43,7 @@ public class ProveedorPermisos {
 
     private final Map<String, Set<String>> permisosPorRol;
 
+    @Autowired
     public ProveedorPermisos(ResourceLoader resourceLoader) throws IOException {
         Objects.requireNonNull(resourceLoader, "resourceLoader");
         Resource recurso = resourceLoader.getResource(UBICACION_RBAC);

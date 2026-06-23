@@ -28,6 +28,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -160,7 +161,7 @@ class ServicioEmergenciasTest {
     @Test
     void listarGeoJsonActivasDevuelveFeatureCollectionMinimo() {
         UUID id = UUID.randomUUID();
-        OffsetDateTime declaradaEn = OffsetDateTime.now();
+        Instant declaradaEn = Instant.now();
         when(repositorioEmergencias.listarPoligonosActivosGeoJson())
                 .thenReturn(List.of(new ProyeccionPoligono(
                         id,
@@ -270,7 +271,7 @@ class ServicioEmergenciasTest {
             String severidad,
             String region,
             String estado,
-            OffsetDateTime declaradaEn,
+            Instant declaradaEn,
             String zonaImpactoGeoJson
     ) implements ProyeccionPoligonoEmergenciaActiva {
         @Override
@@ -299,7 +300,7 @@ class ServicioEmergenciasTest {
         }
 
         @Override
-        public OffsetDateTime getDeclaradaEn() {
+        public Instant getDeclaradaEn() {
             return declaradaEn;
         }
 
