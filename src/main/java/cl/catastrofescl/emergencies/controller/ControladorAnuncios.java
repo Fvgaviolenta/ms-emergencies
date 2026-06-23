@@ -1,5 +1,6 @@
 package cl.catastrofescl.emergencies.controller;
 
+import cl.catastrofescl.emergencies.dto.request.ActualizarAnuncioRequest;
 import cl.catastrofescl.emergencies.dto.request.PublicarAnuncioRequest;
 import cl.catastrofescl.emergencies.dto.response.AnuncioResponse;
 import cl.catastrofescl.emergencies.service.ServicioAnuncios;
@@ -18,6 +19,8 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.util.UUID;
 
 @Tag(name = "Anuncios", description = "Publicacion y consulta de anuncios criticos asociados a emergencias")
 @RestController
@@ -63,5 +67,20 @@ public class ControladorAnuncios {
     public Page<AnuncioResponse> listarVigentes(
             @PageableDefault(size = 20) Pageable pageable) {
         return servicioAnuncios.listarVigentes(pageable);
+    }
+
+    @Operation(summary = "Actualiza un anuncio vigente",
+            description = "Requiere permiso ANUNCIO_PUBLICAR.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Anuncio actualizado"),
+            @ApiResponse(responseCode = "404", description = "Anuncio no encontrado",
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    })
+    @PatchMapping("/{id}")
+    @PreAuthorize("hasAuthority('ANUNCIO_PUBLICAR')")
+    public AnuncioResponse actualizar(
+            @PathVariable UUID id,
+            @Valid @RequestBody ActualizarAnuncioRequest solicitud) {
+        return servicioAnuncios.actualizar(id, solicitud);
     }
 }
