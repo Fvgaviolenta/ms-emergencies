@@ -16,6 +16,8 @@ spring:
     enabled: true
     baseline-on-migrate: true
     locations: classpath:db/migration
+    # BD compartida catastrofescl: tabla de historial propia para no chocar con otros servicios.
+    table: flyway_schema_history_ms_emergencies
   jackson:
     default-property-inclusion: non_null
     serialization:

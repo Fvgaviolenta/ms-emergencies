@@ -30,7 +30,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 
@@ -190,13 +192,17 @@ public class ServicioEmergencias {
 
     private CaracteristicaGeoJsonEmergenciaResponse aCaracteristicaGeoJson(
             ProyeccionPoligonoEmergenciaActiva proyeccion) {
+        Instant declaradaEn = proyeccion.getDeclaradaEn();
+        OffsetDateTime declaradaEnOffset = declaradaEn == null
+                ? null
+                : declaradaEn.atOffset(ZoneOffset.UTC);
         PropiedadesPoligonoEmergenciaResponse propiedades = new PropiedadesPoligonoEmergenciaResponse(
                 proyeccion.getId(),
                 proyeccion.getTipo(),
                 proyeccion.getSeveridad(),
                 proyeccion.getRegion(),
                 proyeccion.getEstado(),
-                proyeccion.getDeclaradaEn()
+                declaradaEnOffset
         );
 
         return CaracteristicaGeoJsonEmergenciaResponse.de(
