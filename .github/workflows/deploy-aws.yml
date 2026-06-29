@@ -31,3 +31,4 @@ jobs:
           context: .
           push: true
           tags: ${{ steps.login-ecr.outputs.registry }}/catastrofescl-ms-emergencies:latest
+#DEPLOY AWS ECS
