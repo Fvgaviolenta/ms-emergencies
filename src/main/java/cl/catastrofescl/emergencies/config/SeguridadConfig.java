@@ -61,7 +61,11 @@ public class SeguridadConfig {
             }
             log.info("Seguridad ms-emergencies con FiltroAutenticacionFirebase (perfil prod)");
             http.addFilterBefore(
-                    new FiltroAutenticacionFirebase(firebaseAuth, proveedorPermisos, devDefaultRoleForGateway),
+                    new FiltroAutenticacionFirebase(
+                            firebaseAuth,
+                            proveedorPermisos,
+                            devDefaultRoleForGateway,
+                            devTrustGatewayFirebaseHeaders),
                     UsernamePasswordAuthenticationFilter.class);
         } else if (devMode) {
             log.warn("Seguridad ms-emergencies en MODO DEV (X-Dev-* / gateway). NO usar en produccion.");
