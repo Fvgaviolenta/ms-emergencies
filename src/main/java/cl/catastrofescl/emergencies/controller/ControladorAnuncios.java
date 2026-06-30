@@ -36,51 +36,46 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ControladorAnuncios {
 
-    private final ServicioAnuncios servicioAnuncios;
+        private final ServicioAnuncios servicioAnuncios;
 
-    @Operation(summary = "Publica un anuncio oficial asociado a una emergencia",
-            description = "Requiere permiso ANUNCIO_PUBLICAR. Publica el evento announcement.published.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Anuncio publicado"),
-            @ApiResponse(responseCode = "404", description = "Emergencia referenciada no existe",
-                    content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
-            @ApiResponse(responseCode = "409", description = "Emergencia en estado FINALIZADA",
-                    content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
-    })
-    @PostMapping
-    @PreAuthorize("hasAuthority('ANUNCIO_PUBLICAR')")
-    public ResponseEntity<AnuncioResponse> publicar(@Valid @RequestBody PublicarAnuncioRequest solicitud) {
-        AnuncioResponse creado = servicioAnuncios.publicar(solicitud);
-        URI ubicacion = ServletUriComponentsBuilder
-                .fromCurrentRequest()
-                .path("/{id}")
-                .buildAndExpand(creado.id())
-                .toUri();
-        return ResponseEntity.created(ubicacion).body(creado);
-    }
+        @Operation(summary = "Publica un anuncio oficial asociado a una emergencia", description = "Requiere permiso ANUNCIO_PUBLICAR. Publica el evento announcement.published.")
+        @ApiResponses({
+                        @ApiResponse(responseCode = "201", description = "Anuncio publicado"),
+                        @ApiResponse(responseCode = "404", description = "Emergencia referenciada no existe", content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
+                        @ApiResponse(responseCode = "409", description = "Emergencia en estado FINALIZADA", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+        })
+        @PostMapping
+        @PreAuthorize("hasAuthority('ANUNCIO_PUBLICAR')")
+        public ResponseEntity<AnuncioResponse> publicar(@Valid @RequestBody PublicarAnuncioRequest solicitud) {
+                AnuncioResponse creado = servicioAnuncios.publicar(solicitud);
+                URI ubicacion = ServletUriComponentsBuilder
+                                .fromCurrentRequest()
+                                .path("/{id}")
+                                .buildAndExpand(creado.id())
+                                .toUri();
+                return ResponseEntity.created(ubicacion).body(creado);
+        }
 
-    @Operation(summary = "Lista los anuncios vigentes",
-            description = "Endpoint PUBLICO. Paginado (page, size). El orden viene fijado por el servidor "
-                    + "(severidad descendente, luego vigenteDesde). Los parametros `sort` del Pageable "
-                    + "no se utilizan.")
-    @GetMapping
-    public Page<AnuncioResponse> listarVigentes(
-            @PageableDefault(size = 20) Pageable pageable) {
-        return servicioAnuncios.listarVigentes(pageable);
-    }
+        @Operation(summary = "Lista los anuncios vigentes", description = "Endpoint PUBLICO. Paginado (page, size). El orden viene fijado por el servidor "
+                        + "(severidad descendente, luego vigenteDesde). Los parametros `sort` del Pageable "
+                        + "no se utilizan.")
+        @GetMapping
+        public Page<AnuncioResponse> listarVigentes(
+                        @PageableDefault(size = 20) Pageable pageable) {
+                return servicioAnuncios.listarVigentes(pageable);
+        }
 
-    @Operation(summary = "Actualiza un anuncio vigente",
-            description = "Requiere permiso ANUNCIO_PUBLICAR.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Anuncio actualizado"),
-            @ApiResponse(responseCode = "404", description = "Anuncio no encontrado",
-                    content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
-    })
-    @PatchMapping("/{id}")
-    @PreAuthorize("hasAuthority('ANUNCIO_PUBLICAR')")
-    public AnuncioResponse actualizar(
-            @PathVariable UUID id,
-            @Valid @RequestBody ActualizarAnuncioRequest solicitud) {
-        return servicioAnuncios.actualizar(id, solicitud);
-    }
+        @Operation(summary = "Actualiza un anuncio vigente", description = "Requiere permiso ANUNCIO_PUBLICAR.")
+        @ApiResponses({
+                        @ApiResponse(responseCode = "200", description = "Anuncio actualizado"),
+                        @ApiResponse(responseCode = "404", description = "Anuncio no encontrado", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+        })
+        // Publicar anuncio
+        @PatchMapping("/{id}")
+        @PreAuthorize("hasAuthority('ANUNCIO_PUBLICAR')")
+        public AnuncioResponse actualizar(
+                        @PathVariable UUID id,
+                        @Valid @RequestBody ActualizarAnuncioRequest solicitud) {
+                return servicioAnuncios.actualizar(id, solicitud);
+        }
 }
