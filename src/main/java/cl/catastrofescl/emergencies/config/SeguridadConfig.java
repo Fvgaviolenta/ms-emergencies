@@ -25,6 +25,12 @@ public class SeguridadConfig {
     @Value("${catastrofescl.auth.dev-mode:false}")
     private boolean devMode;
 
+    @Value("${catastrofescl.auth.dev-trust-gateway-firebase-headers:false}")
+    private boolean devTrustGatewayFirebaseHeaders;
+
+    @Value("${catastrofescl.auth.dev-default-role-for-gateway:}")
+    private String devDefaultRoleForGateway;
+
     @Value("${catastrofescl.firebase.enabled:false}")
     private boolean firebaseEnabled;
 
@@ -36,18 +42,14 @@ public class SeguridadConfig {
 
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                // CORS se centraliza en el API Gateway. Si el MS tambien define CORS, el header
-                // Access-Control-Allow-Origin se duplica y el navegador rechaza la respuesta.
                 .cors(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Endpoints publicos
                         .requestMatchers(HttpMethod.GET, "/emergencies/active").permitAll()
                         .requestMatchers(HttpMethod.GET, "/emergencies/active/geojson").permitAll()
                         .requestMatchers(HttpMethod.GET, "/announcements").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                        // Todo lo demas requiere autenticacion
                         .anyRequest().authenticated()
                 );
 
@@ -57,15 +59,17 @@ public class SeguridadConfig {
                 throw new IllegalStateException(
                         "catastrofescl.firebase.enabled=true pero no se pudo inicializar FirebaseAuth");
             }
-            log.info("Seguridad configurada con FiltroAutenticacionFirebase (perfil prod)");
-            http.addFilterBefore(new FiltroAutenticacionFirebase(firebaseAuth, proveedorPermisos),
+            log.info("Seguridad ms-emergencies con FiltroAutenticacionFirebase (perfil prod)");
+            http.addFilterBefore(
+                    new FiltroAutenticacionFirebase(firebaseAuth, proveedorPermisos, devDefaultRoleForGateway),
                     UsernamePasswordAuthenticationFilter.class);
         } else if (devMode) {
-            log.warn("Seguridad configurada en MODO DEV (filtro por headers X-Dev-*). NO usar en produccion.");
-            http.addFilterBefore(new FiltroAutenticacionDev(proveedorPermisos),
+            log.warn("Seguridad ms-emergencies en MODO DEV (X-Dev-* / gateway). NO usar en produccion.");
+            http.addFilterBefore(
+                    new FiltroAutenticacionDev(proveedorPermisos, devTrustGatewayFirebaseHeaders, devDefaultRoleForGateway),
                     UsernamePasswordAuthenticationFilter.class);
         } else {
-            log.warn("Seguridad sin filtro de autenticacion configurado. Todos los endpoints protegidos responderan 401.");
+            log.warn("Seguridad sin filtro de autenticacion configurado. Endpoints protegidos responderan 401.");
         }
 
         return http.build();
